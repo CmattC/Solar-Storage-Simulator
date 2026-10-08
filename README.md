@@ -30,7 +30,7 @@ Annual production alone does not establish how much household demand solar cover
 1. Clone or download this repository.
 2. Place these files in the same folder:
    - `SolarProductionData.m`
-   - `eatontown_pv_7kW_hourly.csv.csv`
+   - `eatontown_pv_7kW_hourly.csv`
    - `eatontown_synthetic_load_10000kWh_hourly.csv`
 3. Open MATLAB and select that folder as the Current Folder. In MATLAB Online, upload all three files into the same folder.
 4. Run the script from the Editor or enter this in the Command Window:
