@@ -1,6 +1,6 @@
 
 % Import solar data: column headings begin on line 32
-solar = readtable('eatontown_pv_7kW_hourly.csv.csv', ...
+solar = readtable('eatontown_pv_7kW_hourly.csv', ...
     'NumHeaderLines', 31, 'VariableNamingRule', 'preserve');
 
 % Import household usage into a table
