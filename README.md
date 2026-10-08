@@ -48,10 +48,6 @@ SolarProductionData
 
 The script should print approximately 9,679.3 kWh of annual solar production and 10,000.0 kWh of annual household usage, then display two weekly plots.
 
-No additional toolboxes are used by the current script.
-
-Filenames must match the script exactly. The solar filename currently has a double `.csv.csv` extension. Its first 31 lines contain metadata, which the script skips before reading the column headings on line 32.
-
 ## Current Project Files
 
 | File | Purpose |
