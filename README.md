@@ -6,6 +6,13 @@ A MATLAB project modeling hourly solar production and household electricity use 
 
 ## Current Results
 
+### Winter and Summer Weekly Profiles
+
+The plots compare hourly solar production and household
+electricity use for January 1–7 and July 1–7.
+
+[View winter and summer graphs (PDF)](Figure_1.pdf)
+
 | Metric | Value |
 | --- | --- |
 | Hourly records per dataset | 8,760 |
