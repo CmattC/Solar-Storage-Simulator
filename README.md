@@ -55,6 +55,7 @@ The script should print approximately 9,679.3 kWh of annual solar production and
 | `SolarProductionData.m` | Imports data, checks hourly alignment, prints totals, and creates weekly plots |
 | `eatontown_pv_7kW_hourly.csv` | Original PVWatts hourly solar output and system metadata |
 | `eatontown_synthetic_load_10000kWh_hourly.csv` | Synthetic household electricity use totaling 10,000 kWh/year |
+| `Figure_1.pdf` | MATLAB plots comparing hourly solar production and household electricity use for January 1–7 and July 1–7 |
 | `README.md` | Project setup, assumptions, progress, and planned work |
 
 ## Data Sources
