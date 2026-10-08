@@ -57,7 +57,7 @@ Filenames must match the script exactly. The solar filename currently has a doub
 | File | Purpose |
 | --- | --- |
 | `SolarProductionData.m` | Imports data, checks hourly alignment, prints totals, and creates weekly plots |
-| `eatontown_pv_7kW_hourly.csv.csv` | Original PVWatts hourly solar output and system metadata |
+| `eatontown_pv_7kW_hourly.csv` | Original PVWatts hourly solar output and system metadata |
 | `eatontown_synthetic_load_10000kWh_hourly.csv` | Synthetic household electricity use totaling 10,000 kWh/year |
 | `README.md` | Project setup, assumptions, progress, and planned work |
 
