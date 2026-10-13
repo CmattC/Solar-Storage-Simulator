@@ -2,7 +2,7 @@
 
 A MATLAB simulation of solar production and household electricity use for a hypothetical home in Eatontown, NJ. The model uses 8,760 hourly intervals to compare grid-only, solar-only, and solar-plus-battery systems.
 
-**Status:** Data processing, baseline energy calculations, the hourly battery model, annual battery import/export totals, and all three plots are implemented. Electricity pricing, savings, and payback analysis are next.
+**Status:** Data processing, hourly energy flows, battery dispatch, three plots, and preliminary annual billing and savings calculations are implemented. Battery validation, utility-specific billing, payback, and sizing analysis are next.
 
 ## Results
 
@@ -12,106 +12,222 @@ Household electricity use is **10,000.0 kWh/year**, and solar production is **9,
 | --- | ---: | ---: | ---: |
 | Grid imports | 10,000.0 kWh | 6,334.3 kWh | 1,485.1 kWh |
 | Grid exports | 0.0 kWh | 6,013.6 kWh | 640.6 kWh |
-| Net grid imports (imports - exports) | 10,000.0 kWh | 320.7 kWh | 844.6 kWh |
+| Net grid imports | 10,000.0 kWh | 320.7 kWh | 844.6 kWh |
+| Electricity bill | $2,320.00 | $190.55 | $305.80 |
+| Savings versus grid only | — | $2,129.45 | $2,014.20 |
 
-For the solar-only system, 3,665.7 kWh is used directly by the house. Solar self-consumption is 37.9%, and household self-sufficiency is 36.7%; these percentages describe the solar-only baseline.
+For solar only, **3,665.7 kWh** is used directly by the house. Solar self-consumption is **37.9%**, and household self-sufficiency is **36.7%**.
 
-The battery shifts surplus solar into hours when demand exceeds production, reducing annual grid imports by approximately **76.6% compared with solar only**. It also reduces exports. Net imports are higher than the solar-only net balance because storage introduces conversion losses and can retain energy at year-end. Net imports are an energy balance, not an electricity bill or a measure of gross grid dependence.
+The battery reduces grid imports by approximately **76.6% compared with solar only**, but increases the modeled annual bill by **$115.25**. Under equal flat-rate retail credits, exporting solar already offsets later imports. Battery conversion losses and any increase in year-end stored energy therefore increase net consumption without providing a price advantage.
 
-Results are rounded to one decimal place; net totals are calculated before rounding.
+These financial results use assumed rates and simplified annual netting, not a verified utility tariff. Energy totals are calculated before rounding.
 
 ## Figures
 
-1. [Figure 1: Winter and summer hourly plots](Figure_1.pdf) — solar production and household demand for January 1–7 and July 1–7.
-2. [Figure 2: Monthly usage and solar production](Figure_2.pdf) — total household demand and solar generation for each month.
-3. [Figure 3: Monthly grid imports and exports with battery](Figure%203.png) — grouped bars showing energy purchased from and exported to the grid after battery dispatch.
+1. [Winter and summer hourly plots](Figure_1.pdf) — solar production and household demand for January 1–7 and July 1–7.
+2. [Monthly usage and solar production](Figure_2.pdf) — household demand and solar generation by month.
+3. [Monthly grid imports and exports with battery](Figure%203.png) — grid energy flows after battery dispatch.
 
-![Figure 3: Monthly grid imports and exports with battery](Figure%203.png)
+![Monthly grid imports and exports with battery](Figure%203.png)
 
-Figure 3 sums the hourly battery grid flows by month with `accumarray`. Blue bars show imports and orange bars show exports; all monthly totals are in kWh.
+Monthly totals are calculated from hourly data using `accumarray`.
 
 ## How to Run
 
 Keep these files in the same MATLAB folder:
 
 - `SolarProductionData.m`
+- `SolarEconomics.m`
 - `eatontown_pv_7kW_hourly.csv`
 - `eatontown_synthetic_load_10000kWh_hourly.csv`
 
-Run:
+Run the energy simulation:
 
 ```matlab
 SolarProductionData
 ```
 
-The script checks the 8,760-hour data length, timestamp alignment, and solar-only hourly energy balance. It prints baseline and battery annual results, calculates monthly totals, and generates Figures 1–3. The battery function is defined locally in `SolarProductionData.m`; the separate repository file `BatteryModel` is not required to run this script.
+Or run the energy simulation and economics together:
+
+```matlab
+SolarEconomics
+```
+
+`SolarEconomics.m` calls `SolarProductionData.m` before calculating bills and savings.
+
+The energy script checks data length, hourly alignment, and solar-only energy conservation. It calculates baseline and battery energy flows and generates Figures 1–3. The battery function is defined locally in `SolarProductionData.m`.
+
+## Project Files
+
+| File | Purpose |
+| --- | --- |
+| `SolarProductionData.m` | Imports data, checks alignment, calculates energy flows, runs battery dispatch, and generates plots |
+| `SolarEconomics.m` | Calculates annual bills and savings using assumed rates |
+| `eatontown_pv_7kW_hourly.csv` | PVWatts hourly solar output and system metadata |
+| `eatontown_synthetic_load_10000kWh_hourly.csv` | Synthetic household usage totaling 10,000 kWh/year |
+| `Figure_1.pdf` | Winter and summer weekly profiles |
+| `Figure_2.pdf` | Monthly household usage and solar production |
+| `Figure 3.png` | Monthly grid imports and exports with battery |
+| `README.md` | Setup, assumptions, results, and planned work |
+
+## Energy-Flow Calculations
+
+The grid-only baseline supplies all household demand from the grid.
+
+For solar only:
+
+```matlab
+gridOnlyImport = demand;
+
+netDemand = demand - pv;
+gridImport = max(netDemand, 0);
+gridExport = max(-netDemand, 0);
+directSolarUse = min(pv, demand);
+```
+
+Positive net demand requires grid electricity. Negative net demand represents surplus solar available for export.
+
+Performance measures are:
+
+```text
+Self-consumption (%) = 100 × direct solar use / total solar production
+
+Self-sufficiency (%) = 100 × direct solar use / total household usage
+```
+
+Solar-only energy conservation is checked for every hour:
+
+```text
+Solar production + grid import = household demand + grid export
+```
+
+Annual net imports equal total imports minus total exports. They are distinct from gross imports because imports and exports occur at different hours.
 
 ## Battery Model
 
-The script calls:
+The current function call is:
 
 ```matlab
 [stored, charge, discharge, batteryGridImport, batteryGridExport] = ...
     batteryModel(pv, demand, 40, 5, 0.95);
 ```
 
-The function processes each hour in sequence:
+For each hour:
 
 1. Solar supplies household demand first.
-2. Surplus solar charges the battery, limited by surplus energy, the charge limit, and remaining capacity. Any surplus left over is exported.
-3. When solar is insufficient, the battery supplies the deficit, limited by the discharge limit and energy available above the reserve. The grid supplies the remaining deficit.
+2. Surplus solar charges the battery within its power and capacity limits. Remaining surplus is exported.
+3. During a deficit, the battery supplies energy available above its reserve. The grid supplies the remaining demand.
 4. Stored energy is recorded at the end of the hour.
 
-The battery charges only from surplus solar. There is no grid charging or electricity-price-based dispatch.
+The battery charges only from surplus solar. Dispatch does not depend on electricity prices.
 
-| Input | Meaning | Current value |
-| --- | --- | --- |
-| `pv` | Solar energy in each hourly interval | kWh, from the solar CSV |
-| `demand` | Household energy in each hourly interval | kWh, from the load CSV |
-| `capacity` | Maximum stored energy | 40 kWh |
-| `maxPower` | Charge/discharge limit | 5 kW; 5 kWh per one-hour interval |
-| `efficiency` | Efficiency applied separately to charging and discharging | 0.95 |
-
-Charging adds `charge * efficiency` to stored energy. Delivering `discharge` to the house removes `discharge / efficiency` from the battery. Thus 95% efficiency in each direction gives **90.25% round-trip efficiency** (0.95 × 0.95).
-
-The battery starts January 1 at its 10% reserve: **4 kWh**. It remains between 4 and 40 kWh, giving **36 kWh of usable storage**. The simulation does not force the final stored energy to equal the initial stored energy.
-
-| Output in the script | Meaning |
+| Parameter | Current value |
 | --- | --- |
-| `stored` | Battery energy at the end of each hour, in kWh |
-| `charge` | Surplus solar sent into the battery before charging losses, in kWh |
-| `discharge` | Battery energy delivered to household demand after discharge losses, in kWh |
-| `batteryGridImport` | Remaining demand purchased from the grid each hour, in kWh |
-| `batteryGridExport` | Remaining surplus solar exported each hour, in kWh |
+| Capacity | 40 kWh |
+| Charge/discharge power limit | 5 kW |
+| Charging efficiency | 95% |
+| Discharging efficiency | 95% |
+| Round-trip efficiency | 90.25% |
+| Minimum and initial stored energy | 4 kWh |
+| Usable capacity | 36 kWh |
 
-Each output contains 8,760 values. Annual imports and exports are calculated by summing the hourly grid flows. `annualBatteryNetImport` is annual imports minus annual exports. Monthly imports and exports are grouped using `house.Month` into 12 totals for Figure 3.
+Charging adds `charge * efficiency` to stored energy. Discharging removes `discharge / efficiency`. Applying 95% efficiency in both directions gives 90.25% round-trip efficiency.
 
-To compare battery sizes, change the capacity, power limit, and efficiency in the function call. The current 40 kWh setting replaces the previously planned 13.5 kWh scenario. The 10% reserve is set inside the function. Changing the time step would also require updating the power-to-energy conversion and dispatch logic.
+The battery starts at its 10% reserve. The final stored energy is not forced to equal the initial value.
+
+| Output | Meaning |
+| --- | --- |
+| `stored` | Stored energy at the end of each hour |
+| `charge` | Solar energy entering the battery before charging losses |
+| `discharge` | Battery energy delivered to the house after discharge losses |
+| `batteryGridImport` | Remaining household demand supplied by the grid |
+| `batteryGridExport` | Remaining solar surplus exported to the grid |
+
+Each output contains 8,760 hourly values in kWh. Annual and monthly totals are obtained by summing these values.
+
+The 5 kW power limit permits up to 5 kWh of charging or discharging during a one-hour interval. Changing the time step would require updating the power-to-energy conversion.
+
+## Billing and Savings Model
+
+The preliminary model uses these assumptions:
+
+| Parameter | Assumed value |
+| --- | --- |
+| Retail electricity rate | $0.22/kWh |
+| Annual excess compensation | $0.05/kWh |
+| Fixed monthly charge | $10 |
+| Fixed annual charge | $120 |
+| Settlement approach | Simplified annual netting |
+
+Annual net consumption is calculated as:
+
+```matlab
+netUsage = annualImports - annualExports;
+```
+
+Positive net consumption is charged at the retail rate. Annual net surplus receives the assumed wholesale compensation:
+
+```matlab
+annualBill = max(netUsage, 0) * retailRate ...
+    - max(-netUsage, 0) * wholesaleRate ...
+    + annualFixedCharge;
+```
+
+Savings are calculated as:
+
+```matlab
+annualSolarSavings = baselineCost - solarOnlyCost;
+batterySavingVsGrid = baselineCost - batteryCost;
+batteryExtraSavings = solarOnlyCost - batteryCost;
+```
+
+Both solar scenarios have positive annual net consumption, so the wholesale compensation rate does not affect the current results.
+
+The model approximates retail-credit net metering over a full year. Monthly credit banking, settlement timing, minimum bills, and utility-specific charges remain to be implemented. The rates above are study assumptions.
 
 ## Data and Assumptions
 
-Solar output comes from [PVWatts](https://pvwatts.nlr.gov/). Household usage is synthetic, with assumed daily and seasonal patterns scaled to 10,000 kWh/year.
+**Solar production:** [PVWatts Calculator](https://pvwatts.nlr.gov/), configured for Eatontown, NJ. The `AC System Output (W)` column is converted to energy for each one-hour interval:
+
+```text
+Solar energy (kWh) = AC output (W) / 1000 × 1 hour
+```
+
+**Household usage:** A synthetic profile with assumed morning and evening peaks, day-to-day variation, and higher summer usage, scaled to exactly 10,000 kWh/year. The `Load_kWh` column contains hourly consumption.
+
+The household profile is not measured data, a verified Eatontown average, or an OpenEI/NREL residential load dataset.
 
 | Parameter | Value |
 | --- | --- |
+| Location | Eatontown, NJ |
 | Solar capacity | 7 kW DC |
 | Mounting | Fixed rooftop |
+| Module type | Standard |
 | Tilt / azimuth | 25° / 180° |
+| System losses | 14.08% |
+| DC-to-AC size ratio | 1.2 |
+| Inverter efficiency | 96% |
 | Time step | 1 hour |
 | Battery capacity | 40 kWh |
-| Battery charge/discharge limit | 5 kW |
-| Charging / discharging efficiency | 95% / 95% |
-| Round-trip efficiency | 90.25% |
-| Minimum / initial state of charge | 10% / 10% |
 
-The household profile is not measured data. The battery model uses fixed capacity, power limits, and efficiencies; it does not include degradation, self-discharge, temperature effects, or outage/backup operation. Costs, tariffs, net-metering credits, and payback have not yet been calculated.
+## Limitations
+
+- Household consumption is synthetic, so results depend on assumed usage patterns.
+- Solar production is modeled rather than measured from an installed system.
+- A single annual solar profile does not capture variation between weather years.
+- The battery uses fixed capacity, power limits, and efficiencies. It does not include degradation, self-discharge, temperature effects, or outage operation.
+- Initial and final battery energy may differ, affecting annual comparisons.
+- Billing uses assumed prices and simplified annual netting.
+- Installed costs and payback have not yet been calculated.
 
 ## Next Steps
 
-- Add battery-specific energy-balance and state-of-charge checks, including conversion losses and changes in stored energy.
-- Model electricity rates, net metering, savings, and payback.
-- Compare solar and battery sizes, including the 13.5 kWh scenario.
-- Evaluate the effect of initial and final battery state of charge on annual comparisons.
+- Validate battery energy conservation and stored-energy limits.
+- Check the effect of initial and final battery charge on annual results.
+- Implement verified utility tariffs and monthly net-metering rules.
+- Add installed costs, applicable incentives, and simple payback.
+- Compare solar and battery sizes, including a 13.5 kWh battery.
+- Present sizing results and final conclusions.
 
 ## Authors
 
