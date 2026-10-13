@@ -2,7 +2,7 @@
 
 A MATLAB simulation of solar production and household electricity use for a hypothetical home in Eatontown, NJ. The model uses 8,760 hourly intervals to compare grid-only, solar-only, and solar-plus-battery systems.
 
-**Status:** Data processing, hourly energy flows, battery dispatch, three plots, and preliminary annual billing and savings calculations are implemented. Battery validation, utility-specific billing, payback, and sizing analysis are next.
+**Status:** Data processing, hourly energy flows, battery dispatch, three plots, and preliminary annual billing and savings calculations are implemented. Battery validation and utility-specific billing are next.
 
 ## Results
 
